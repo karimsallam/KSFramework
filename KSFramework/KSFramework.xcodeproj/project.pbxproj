@@ -8,15 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		8A85598C15C153C4000C40EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A85598B15C153C4000C40EE /* Foundation.framework */; };
-		8A85599215C153C4000C40EE /* KSFramework.m in Sources */ = {isa = PBXBuildFile; fileRef = 8A85599115C153C4000C40EE /* KSFramework.m */; };
+		8A8559D415C16654000C40EE /* KSCoreDataClient.h in Headers */ = {isa = PBXBuildFile; fileRef = 8A8559CE15C16654000C40EE /* KSCoreDataClient.h */; };
+		8A8559D515C16654000C40EE /* KSCoreDataClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 8A8559CF15C16654000C40EE /* KSCoreDataClient.m */; };
+		8A8559D615C16654000C40EE /* KSManagedObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 8A8559D015C16654000C40EE /* KSManagedObject.h */; };
+		8A8559D715C16654000C40EE /* KSManagedObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 8A8559D115C16654000C40EE /* KSManagedObject.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		8A85598815C153C4000C40EE /* libKSFramework.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libKSFramework.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A85598B15C153C4000C40EE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		8A85598F15C153C4000C40EE /* KSFramework-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "KSFramework-Prefix.pch"; sourceTree = "<group>"; };
-		8A85599015C153C4000C40EE /* KSFramework.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KSFramework.h; sourceTree = "<group>"; };
-		8A85599115C153C4000C40EE /* KSFramework.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KSFramework.m; sourceTree = "<group>"; };
+		8A8559CE15C16654000C40EE /* KSCoreDataClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KSCoreDataClient.h; sourceTree = "<group>"; };
+		8A8559CF15C16654000C40EE /* KSCoreDataClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KSCoreDataClient.m; sourceTree = "<group>"; };
+		8A8559D015C16654000C40EE /* KSManagedObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KSManagedObject.h; sourceTree = "<group>"; };
+		8A8559D115C16654000C40EE /* KSManagedObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KSManagedObject.m; sourceTree = "<group>"; };
+		8A8559D215C16654000C40EE /* mogen.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = mogen.sh; sourceTree = "<group>"; };
+		8A8559D315C16654000C40EE /* mogend.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = mogend.sh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,8 +66,7 @@
 		8A85598D15C153C4000C40EE /* KSFramework */ = {
 			isa = PBXGroup;
 			children = (
-				8A85599015C153C4000C40EE /* KSFramework.h */,
-				8A85599115C153C4000C40EE /* KSFramework.m */,
+				8A8559CD15C16635000C40EE /* CoreData */,
 				8A85598E15C153C4000C40EE /* Supporting Files */,
 			);
 			path = KSFramework;
@@ -74,6 +80,19 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		8A8559CD15C16635000C40EE /* CoreData */ = {
+			isa = PBXGroup;
+			children = (
+				8A8559CE15C16654000C40EE /* KSCoreDataClient.h */,
+				8A8559CF15C16654000C40EE /* KSCoreDataClient.m */,
+				8A8559D015C16654000C40EE /* KSManagedObject.h */,
+				8A8559D115C16654000C40EE /* KSManagedObject.m */,
+				8A8559D215C16654000C40EE /* mogen.sh */,
+				8A8559D315C16654000C40EE /* mogend.sh */,
+			);
+			path = CoreData;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -81,6 +100,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A8559D415C16654000C40EE /* KSCoreDataClient.h in Headers */,
+				8A8559D615C16654000C40EE /* KSManagedObject.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,7 +155,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8A85599215C153C4000C40EE /* KSFramework.m in Sources */,
+				8A8559D515C16654000C40EE /* KSCoreDataClient.m in Sources */,
+				8A8559D715C16654000C40EE /* KSManagedObject.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,6 +248,7 @@
 				8A85599715C153C4000C40EE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
