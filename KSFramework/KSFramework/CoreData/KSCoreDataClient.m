@@ -20,17 +20,20 @@
 
 @synthesize managedObjectModelName;
 @synthesize databaseName;
+@synthesize bundleName;
 @synthesize managedObjectModel;
 @synthesize mainManagedObjectContext;
 @synthesize persistentStoreCoordinator;
 
 - (id)initWithManagedObjectModelName:(NSString *)aManagedObjectModelName
                         databaseName:(NSString *)aDatabaseName
+                              bundle:(NSString *)bundleNameOrNil
 {
   if ((self = [super init]))
   {
     managedObjectModelName = [aManagedObjectModelName copy];
     databaseName = [aDatabaseName copy];
+    bundleName = [bundleNameOrNil copy];
   }
   return self;
 }
@@ -74,7 +77,7 @@
 	if (self.mainManagedObjectContext != [notification object])
   {
 		[self.mainManagedObjectContext performSelectorOnMainThread:@selector(mergeChangesFromContextDidSaveNotification:)
-                                                    withObject:notification 
+                                                    withObject:notification
                                                  waitUntilDone:NO];
   }
 }
@@ -110,11 +113,17 @@
   
   if (!self.managedObjectModelName) return nil;
   
-  NSURL *objectModelURL = [[NSBundle mainBundle] URLForResource:self.managedObjectModelName
+  NSString *momPath = self.managedObjectModelName;
+  if (bundleName)
+  {
+    momPath = [NSString stringWithFormat:@"%@/%@", bundleName, self.managedObjectModelName];
+  }
+  
+  NSURL *objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
                                                   withExtension:@"momd"];
   if (!objectModelURL)
   {
-    objectModelURL = [[NSBundle mainBundle] URLForResource:self.managedObjectModelName
+    objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
                                              withExtension:@"mom"];
   }
   managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:objectModelURL];

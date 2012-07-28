@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo Building KSFramework
+
 rm -rf build
 rm -rf KSFramework/build
 
@@ -18,3 +20,5 @@ mkdir build/Scripts
 find KSFramework/KSFramework -type f -name "*.sh" -exec cp {} build/Scripts \;
 
 lipo -info build/libKSFramework.a
+
+echo Done

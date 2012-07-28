@@ -13,12 +13,15 @@
 
 @property(readonly, copy, nonatomic) NSString *managedObjectModelName;
 @property(readonly, copy, nonatomic) NSString *databaseName;
+@property(readonly, copy, nonatomic) NSString *bundleName;
 @property(readonly, strong, nonatomic) NSManagedObjectModel *managedObjectModel;
 @property(readonly, strong, nonatomic) NSManagedObjectContext *mainManagedObjectContext;
 @property(readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
 - (id)initWithManagedObjectModelName:(NSString *)managedObjectModelName
-                        databaseName:(NSString *)databaseName;
+                        databaseName:(NSString *)databaseName
+                              bundle:(NSString *)bundleNameOrNil;
+
 
 - (NSManagedObjectContext *)managedObjectContext;
 
