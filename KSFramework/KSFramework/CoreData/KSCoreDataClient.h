@@ -18,10 +18,14 @@
 @property(readonly, strong, nonatomic) NSManagedObjectContext *mainManagedObjectContext;
 @property(readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
+// To load the managedObjectModel from a bundle.
 - (id)initWithManagedObjectModelName:(NSString *)managedObjectModelName
                         databaseName:(NSString *)databaseName
                               bundle:(NSString *)bundleNameOrNil;
 
+// To pass a managedObjectModel.
+// The managedObjectModel is copied.
+- (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel;
 
 - (NSManagedObjectContext *)managedObjectContext;
 

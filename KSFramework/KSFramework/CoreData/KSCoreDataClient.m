@@ -8,7 +8,7 @@
 
 #import "KSCoreDataClient.h"
 
-@interface KSCoreDataClient()
+@interface KSCoreDataClient ()
 
 - (void)mergeChangesFromContextDidSaveNotification:(NSNotification *)notification;
 
@@ -29,11 +29,22 @@
                         databaseName:(NSString *)aDatabaseName
                               bundle:(NSString *)bundleNameOrNil
 {
-  if ((self = [super init]))
+  self = [super init];
+  if (self)
   {
     managedObjectModelName = [aManagedObjectModelName copy];
     databaseName = [aDatabaseName copy];
     bundleName = [bundleNameOrNil copy];
+  }
+  return self;
+}
+
+- (id)initWithManagedObjectModel:(NSManagedObjectModel *)aManagedObjectModel
+{
+  self = [super init];
+  if (self)
+  {
+    managedObjectModel = [aManagedObjectModel copy];
   }
   return self;
 }
