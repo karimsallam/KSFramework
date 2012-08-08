@@ -40,11 +40,13 @@
 }
 
 - (id)initWithManagedObjectModel:(NSManagedObjectModel *)aManagedObjectModel
+                    databaseName:(NSString *)aDatabaseName
 {
   self = [super init];
   if (self)
   {
     managedObjectModel = [aManagedObjectModel copy];
+    databaseName = [aDatabaseName copy];
   }
   return self;
 }

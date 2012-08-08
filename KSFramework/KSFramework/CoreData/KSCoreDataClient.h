@@ -25,7 +25,8 @@
 
 // To pass a managedObjectModel.
 // The managedObjectModel is copied.
-- (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel;
+- (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel
+                    databaseName:(NSString *)databaseName;
 
 - (NSManagedObjectContext *)managedObjectContext;
 
