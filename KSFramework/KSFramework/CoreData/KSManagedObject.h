@@ -19,6 +19,7 @@ managedObjectContext:(NSManagedObjectContext *)managedObjectContext;
 + (void)flushCache;
 
 + (id)updateOrInsertWithDictionary:(NSDictionary *)dictionary
+                         idKeyPath:(NSString *)idKeyPath
               managedObjectContext:(NSManagedObjectContext *)managedObjectContext;
 
 - (void)updateWithDictionary:(NSDictionary *)dictionary;

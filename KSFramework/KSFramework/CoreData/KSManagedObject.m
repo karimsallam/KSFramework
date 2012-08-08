@@ -181,9 +181,10 @@ managedObjectContext:(NSManagedObjectContext *)managedObjectContext
 }
 
 + (id)updateOrInsertWithDictionary:(NSDictionary *)dictionary
+                         idKeyPath:(NSString *)idKeyPath
               managedObjectContext:(NSManagedObjectContext *)managedObjectContext
 {
-	KSManagedObject *entity = [self fetchOrInsertWithId:[dictionary objectForKey:@"id"]
+	KSManagedObject *entity = [self fetchOrInsertWithId:[dictionary valueForKeyPath:idKeyPath]
                                  managedObjectContext:managedObjectContext];
 	[entity updateWithDictionary:dictionary];
 	return entity;
