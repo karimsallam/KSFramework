@@ -6,30 +6,32 @@
 //  Copyright (c) 2012 Karim Sallam. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <CoreData/CoreData.h>
 
 @interface KSCoreDataClient : NSObject
 
-@property(readonly, copy, nonatomic) NSString *managedObjectModelName;
-@property(readonly, copy, nonatomic) NSString *databaseName;
-@property(readonly, copy, nonatomic) NSString *bundleName;
-@property(readonly, strong, nonatomic) NSManagedObjectModel *managedObjectModel;
-@property(readonly, strong, nonatomic) NSManagedObjectContext *mainManagedObjectContext;
-@property(readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
-
-// To load the managedObjectModel from a bundle.
+// To load the managedObjectModel from a bundle. If bundle is nil loads the managedObjectModel from the main bundle.
 - (id)initWithManagedObjectModelName:(NSString *)managedObjectModelName
                         databaseName:(NSString *)databaseName
                               bundle:(NSString *)bundleNameOrNil;
 
-// To pass a managedObjectModel.
-// The managedObjectModel is copied.
+// To pass a managedObjectModel. The managedObjectModel is copied.
 - (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel
                     databaseName:(NSString *)databaseName;
+
+@property (readonly, copy, nonatomic) NSString *managedObjectModelName;
+@property (readonly, copy, nonatomic) NSString *databaseName;
+@property (readonly, copy, nonatomic) NSString *bundleName;
+
+- (NSManagedObjectModel *)managedObjectModel;
+- (NSManagedObjectContext *)mainManagedObjectContext;
+- (NSPersistentStoreCoordinator *)persistentStoreCoordinator;
 
 - (NSManagedObjectContext *)managedObjectContext;
 
 - (BOOL)saveContext;
+
+// Remove the current persistentStore and create a new empty one.
+- (BOOL)reset;
 
 @end

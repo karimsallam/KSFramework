@@ -10,50 +10,133 @@
 
 @interface KSCoreDataClient ()
 
-- (void)mergeChangesFromContextDidSaveNotification:(NSNotification *)notification;
-
-- (NSURL *)applicationCachesDirectory;
+@property (strong, nonatomic) NSManagedObjectModel          *managedObjectModel;
+@property (strong, nonatomic) NSManagedObjectContext        *mainManagedObjectContext;
+@property (strong, nonatomic) NSPersistentStoreCoordinator  *persistentStoreCoordinator;
 
 @end
 
 @implementation KSCoreDataClient
 
-@synthesize managedObjectModelName;
-@synthesize databaseName;
-@synthesize bundleName;
-@synthesize managedObjectModel;
-@synthesize mainManagedObjectContext;
-@synthesize persistentStoreCoordinator;
-
-- (id)initWithManagedObjectModelName:(NSString *)aManagedObjectModelName
-                        databaseName:(NSString *)aDatabaseName
+- (id)initWithManagedObjectModelName:(NSString *)managedObjectModelName
+                        databaseName:(NSString *)databaseName
                               bundle:(NSString *)bundleNameOrNil
 {
   self = [super init];
-  if (self)
-  {
-    managedObjectModelName = [aManagedObjectModelName copy];
-    databaseName = [aDatabaseName copy];
-    bundleName = [bundleNameOrNil copy];
-  }
+  if (!self) return nil;
+  _managedObjectModelName = [managedObjectModelName copy];
+  _databaseName = [databaseName copy];
+  _bundleName = [bundleNameOrNil copy];
   return self;
 }
 
-- (id)initWithManagedObjectModel:(NSManagedObjectModel *)aManagedObjectModel
+- (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel
                     databaseName:(NSString *)aDatabaseName
 {
   self = [super init];
-  if (self)
-  {
-    managedObjectModel = [aManagedObjectModel copy];
-    databaseName = [aDatabaseName copy];
-  }
+  if (!self) return nil;
+  _managedObjectModel = [managedObjectModel copy];
+  _databaseName = [aDatabaseName copy];
   return self;
 }
 
 - (void)dealloc
 {
   [self saveContext];
+}
+
+#pragma mark - Core Data stack
+
+- (NSManagedObjectModel *)managedObjectModel
+{
+	if (_managedObjectModel) return _managedObjectModel;
+  
+  if (!_managedObjectModelName) return nil;
+  
+  NSString *momPath = _managedObjectModelName;
+  if (_bundleName)
+  {
+    momPath = [NSString stringWithFormat:@"%@/%@", _bundleName, _managedObjectModelName];
+  }
+  
+  NSURL *objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
+                                                  withExtension:@"momd"];
+  if (!objectModelURL)
+  {
+    objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
+                                             withExtension:@"mom"];
+  }
+  _managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:objectModelURL];
+  return _managedObjectModel;
+}
+
+- (NSManagedObjectContext *)mainManagedObjectContext
+{
+	if (_mainManagedObjectContext) return _mainManagedObjectContext;
+  
+	// Create the main object context only on the main thread.
+	if (![NSThread isMainThread])
+  {
+		[self performSelectorOnMainThread:@selector(mainManagedObjectContext)
+                           withObject:nil
+                        waitUntilDone:YES];
+		return _mainManagedObjectContext;
+	}
+  
+	_mainManagedObjectContext = [[NSManagedObjectContext alloc] init];
+	[_mainManagedObjectContext setPersistentStoreCoordinator:self.persistentStoreCoordinator];
+  [_mainManagedObjectContext setMergePolicy:NSMergeByPropertyObjectTrumpMergePolicy];
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(mergeChangesFromContextDidSaveNotification:)
+                                               name:NSManagedObjectContextDidSaveNotification
+                                             object:nil];
+	return _mainManagedObjectContext;
+}
+
+
+- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
+{
+	if (_persistentStoreCoordinator) return _persistentStoreCoordinator;
+  
+  if (!self.managedObjectModel) return nil;
+  
+  if (!_databaseName) return nil;
+  
+  NSURL *storeURL = [[self applicationCachesDirectory] URLByAppendingPathComponent:_databaseName];
+	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
+                           [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
+                           [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
+                           nil];
+  NSError *error = nil;
+	_persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:self.managedObjectModel];
+	if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
+                                                 configuration:nil
+                                                           URL:storeURL
+                                                       options:options
+                                                         error:&error])
+  {
+    NSLog(@"Can't add/merge persistent store: %@, %@", error, [error userInfo]);
+    if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error])
+    {
+      NSLog(@"Can't remove previous persistent store file: %@, %@", error, [error userInfo]);
+    }
+    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
+                                                   configuration:nil
+                                                             URL:storeURL
+                                                         options:nil
+                                                           error:&error])
+    {
+      NSLog(@"Can't add new persistent store: %@, %@", error, [error userInfo]);
+    }
+	}
+	return _persistentStoreCoordinator;
+}
+
+- (NSManagedObjectContext *)managedObjectContext
+{
+	NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] init];
+	[managedObjectContext setPersistentStoreCoordinator:self.persistentStoreCoordinator];
+	return managedObjectContext;
 }
 
 - (BOOL)saveContext
@@ -81,109 +164,51 @@
 	return YES;
 }
 
+- (BOOL)reset
+{
+  NSURL *storeURL = [[self applicationCachesDirectory] URLByAppendingPathComponent:_databaseName];
+  NSPersistentStore *persistentStore = [self.persistentStoreCoordinator persistentStoreForURL:storeURL];
+  NSError *error = nil;
+  if (![self.persistentStoreCoordinator removePersistentStore:persistentStore error:&error])
+  {
+    NSLog(@"Can't remove persistent store: %@, %@", error, [error userInfo]);
+    return NO;
+  }
+  else
+  {
+    if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error])
+    {
+      NSLog(@"Can't remove persistent store file: %@, %@", error, [error userInfo]);
+      return NO;
+    }
+    else if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
+                                                        configuration:nil
+                                                                  URL:storeURL
+                                                              options:nil
+                                                                error:&error])
+    {
+      NSLog(@"Can't add persistent store: %@, %@", error, [error userInfo]);
+      return NO;
+    }
+  }
+  return YES;
+}
+
+#pragma mark - Private
+
 /* The NSManagedObjectContext in the NSOperation is on a background thread.
  * We want merge notifications to happen on the main thread and there is no
  * need to act on the main thread's own merge notifications.
  */
 - (void)mergeChangesFromContextDidSaveNotification:(NSNotification *)notification
 {
-	if (self.mainManagedObjectContext != [notification object])
+  if (self.mainManagedObjectContext != [notification object])
   {
-		[self.mainManagedObjectContext performSelectorOnMainThread:@selector(mergeChangesFromContextDidSaveNotification:)
+    [self.mainManagedObjectContext performSelectorOnMainThread:@selector(mergeChangesFromContextDidSaveNotification:)
                                                     withObject:notification
                                                  waitUntilDone:NO];
   }
 }
-
-#pragma mark - Core Data stack
-
-- (NSManagedObjectContext *)mainManagedObjectContext
-{
-	if (mainManagedObjectContext) return mainManagedObjectContext;
-  
-	// Create the main object context only on the main thread
-	if (![NSThread isMainThread])
-  {
-		[self performSelectorOnMainThread:@selector(mainManagedObjectContext)
-                           withObject:nil
-                        waitUntilDone:YES];
-		return mainManagedObjectContext;
-	}
-  
-	mainManagedObjectContext = [[NSManagedObjectContext alloc] init];
-	[mainManagedObjectContext setPersistentStoreCoordinator:self.persistentStoreCoordinator];
-  [mainManagedObjectContext setMergePolicy:NSMergeByPropertyObjectTrumpMergePolicy];
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(mergeChangesFromContextDidSaveNotification:)
-                                               name:NSManagedObjectContextDidSaveNotification
-                                             object:nil];
-	return mainManagedObjectContext;
-}
-
-- (NSManagedObjectModel *)managedObjectModel
-{
-	if (managedObjectModel) return managedObjectModel;
-  
-  if (!self.managedObjectModelName) return nil;
-  
-  NSString *momPath = self.managedObjectModelName;
-  if (bundleName)
-  {
-    momPath = [NSString stringWithFormat:@"%@/%@", bundleName, self.managedObjectModelName];
-  }
-  
-  NSURL *objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
-                                                  withExtension:@"momd"];
-  if (!objectModelURL)
-  {
-    objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
-                                             withExtension:@"mom"];
-  }
-  managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:objectModelURL];
-  return managedObjectModel;
-}
-
-- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
-{
-	if (persistentStoreCoordinator) return persistentStoreCoordinator;
-  
-  if (!self.managedObjectModel) return nil;
-  
-  if (!self.databaseName) return nil;
-  
-  NSURL *storeURL = [[self applicationCachesDirectory] URLByAppendingPathComponent:self.databaseName];
-	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
-                           [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
-                           [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
-                           nil];
-  NSError *error = nil;
-	persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:self.managedObjectModel];
-	if (![persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
-                                                configuration:nil
-                                                          URL:storeURL
-                                                      options:options
-                                                        error:&error])
-  {
-    NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-    [[NSFileManager defaultManager] removeItemAtURL:[[self applicationCachesDirectory] URLByAppendingPathComponent:self.databaseName]
-                                              error:nil];
-		[persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
-                                             configuration:nil
-                                                       URL:storeURL
-                                                   options:nil
-                                                     error:&error];
-	}
-	return persistentStoreCoordinator;
-}
-
-- (NSManagedObjectContext *)managedObjectContext
-{
-	NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] init];
-	[managedObjectContext setPersistentStoreCoordinator:self.persistentStoreCoordinator];
-	return managedObjectContext;
-}
-
-#pragma mark - Application's Caches directory
 
 - (NSURL *)applicationCachesDirectory
 {
