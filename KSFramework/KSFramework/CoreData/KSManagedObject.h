@@ -12,18 +12,21 @@
 
 + (void)cacheWithIds:(NSArray *)ids
 managedObjectContext:(NSManagedObjectContext *)managedObjectContext;
+
 + (void)cacheWithIds:(NSArray *)ids
 relationshipKeyPaths:(NSArray *)keyPaths
 managedObjectContext:(NSManagedObjectContext *)managedObjectContext;
-
-+ (void)flushCache;
 
 + (id)updateOrInsertWithDictionary:(NSDictionary *)dictionary
                          idKeyPath:(NSString *)idKeyPath
               managedObjectContext:(NSManagedObjectContext *)managedObjectContext;
 
-- (void)updateWithDictionary:(NSDictionary *)dictionary;
++ (void)flushCache;
+
+#pragma mark - Overrides
 
 + (NSString *)idKeyName;
+
+- (void)updateWithDictionary:(NSDictionary *)dictionary;
 
 @end
