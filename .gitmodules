@@ -1,0 +1,3 @@
+[submodule "KSFramework/KSPagingView"]
+	path = KSFramework/KSPagingView
+	url = git@github.com:karimsallam/KSPagingView.git
