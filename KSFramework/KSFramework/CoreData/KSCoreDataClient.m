@@ -21,22 +21,28 @@
 - (id)initWithManagedObjectModelName:(NSString *)managedObjectModelName
                         databaseName:(NSString *)databaseName
                               bundle:(NSString *)bundleNameOrNil
+                          folderName:(NSString *)folderNameOrNil
 {
-  self = [super init];
-  if (!self) return nil;
+  if (!(self = [super init])) return nil;
+  
   _managedObjectModelName = [managedObjectModelName copy];
   _databaseName = [databaseName copy];
   _bundleName = [bundleNameOrNil copy];
+  _folderName = [folderNameOrNil copy];
+  
   return self;
 }
 
 - (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel
-                    databaseName:(NSString *)aDatabaseName
+                    databaseName:(NSString *)databaseName
+                      folderName:(NSString *)folderNameOrNil
 {
-  self = [super init];
-  if (!self) return nil;
+  if (!(self = [super init])) return nil;
+  
   _managedObjectModel = [managedObjectModel copy];
-  _databaseName = [aDatabaseName copy];
+  _databaseName = [databaseName copy];
+  _folderName = [folderNameOrNil copy];
+  
   return self;
 }
 
@@ -49,25 +55,20 @@
 
 - (NSManagedObjectModel *)managedObjectModel
 {
-	if (_managedObjectModel) return _managedObjectModel;
-  
+	if (_managedObjectModel)      return _managedObjectModel;
   if (!_managedObjectModelName) return nil;
   
   NSString *momPath = _managedObjectModelName;
-  if (_bundleName)
-  {
+  if (_bundleName) {
     momPath = [NSString stringWithFormat:@"%@/%@", _bundleName, _managedObjectModelName];
   }
   
-  NSURL *objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
-                                                  withExtension:@"momd"];
-  if (!objectModelURL)
-  {
-    objectModelURL = [[NSBundle mainBundle] URLForResource:momPath
-                                             withExtension:@"mom"];
+  NSURL *objectModelURL = [[NSBundle mainBundle] URLForResource:momPath withExtension:@"momd"];
+  if (!objectModelURL) {
+    objectModelURL = [[NSBundle mainBundle] URLForResource:momPath withExtension:@"mom"];
   }
-  _managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:objectModelURL];
-  return _managedObjectModel;
+  
+  return _managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:objectModelURL];
 }
 
 - (NSManagedObjectContext *)mainManagedObjectContext
@@ -75,11 +76,8 @@
 	if (_mainManagedObjectContext) return _mainManagedObjectContext;
   
 	// Create the main object context only on the main thread.
-	if (![NSThread isMainThread])
-  {
-		[self performSelectorOnMainThread:@selector(mainManagedObjectContext)
-                           withObject:nil
-                        waitUntilDone:YES];
+	if (![NSThread isMainThread]) {
+		[self performSelectorOnMainThread:@selector(mainManagedObjectContext) withObject:nil waitUntilDone:YES];
 		return _mainManagedObjectContext;
 	}
   
@@ -90,19 +88,18 @@
                                            selector:@selector(mergeChangesFromContextDidSaveNotification:)
                                                name:NSManagedObjectContextDidSaveNotification
                                              object:nil];
+  
 	return _mainManagedObjectContext;
 }
 
 
 - (NSPersistentStoreCoordinator *)persistentStoreCoordinator
 {
-	if (_persistentStoreCoordinator) return _persistentStoreCoordinator;
+	if (_persistentStoreCoordinator)  return _persistentStoreCoordinator;
+  if (!self.managedObjectModel)     return nil;
+  if (!_databaseName)               return nil;
   
-  if (!self.managedObjectModel) return nil;
-  
-  if (!_databaseName) return nil;
-  
-  NSURL *storeURL = [[self applicationCachesDirectory] URLByAppendingPathComponent:_databaseName];
+  NSURL *storeURL = [self storeURL];
 	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
                            [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
                            [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
@@ -113,29 +110,27 @@
                                                  configuration:nil
                                                            URL:storeURL
                                                        options:options
-                                                         error:&error])
-  {
+                                                         error:&error]) {
     NSLog(@"Can't add/merge persistent store: %@, %@", error, [error userInfo]);
-    if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error])
-    {
+    if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error]) {
       NSLog(@"Can't remove previous persistent store file: %@, %@", error, [error userInfo]);
     }
     if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
                                                    configuration:nil
                                                              URL:storeURL
                                                          options:nil
-                                                           error:&error])
-    {
+                                                           error:&error]) {
       NSLog(@"Can't add new persistent store: %@, %@", error, [error userInfo]);
     }
 	}
+  
 	return _persistentStoreCoordinator;
 }
 
-- (NSManagedObjectContext *)managedObjectContext
-{
+- (NSManagedObjectContext *)managedObjectContext {
 	NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] init];
 	[managedObjectContext setPersistentStoreCoordinator:self.persistentStoreCoordinator];
+  
 	return managedObjectContext;
 }
 
@@ -144,19 +139,15 @@
 	if (![self.mainManagedObjectContext hasChanges]) return YES;
   
 	NSError *error = nil;
-	if (![self.mainManagedObjectContext save:&error])
-  {
+	if (![self.mainManagedObjectContext save:&error]) {
     NSLog(@"Error while saving: %@", [error localizedDescription]);
     NSArray *detailedErrors = [[error userInfo] objectForKey:NSDetailedErrorsKey];
-    if (detailedErrors && [detailedErrors count])
-    {
-      for (NSError *detailedError in detailedErrors)
-      {
+    if (detailedErrors && [detailedErrors count]) {
+      for (NSError *detailedError in detailedErrors) {
         NSLog(@"Detailed Error: %@", [detailedError userInfo]);
       }
     }
-    else
-    {
+    else {
       NSLog(@"%@", [error userInfo]);
     }
     return NO;
@@ -166,18 +157,15 @@
 
 - (BOOL)reset
 {
-  NSURL *storeURL = [[self applicationCachesDirectory] URLByAppendingPathComponent:_databaseName];
+  NSURL *storeURL = [self storeURL];
   NSPersistentStore *persistentStore = [self.persistentStoreCoordinator persistentStoreForURL:storeURL];
   NSError *error = nil;
-  if (![self.persistentStoreCoordinator removePersistentStore:persistentStore error:&error])
-  {
+  if (![self.persistentStoreCoordinator removePersistentStore:persistentStore error:&error]) {
     NSLog(@"Can't remove persistent store: %@, %@", error, [error userInfo]);
     return NO;
   }
-  else
-  {
-    if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error])
-    {
+  else {
+    if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error]) {
       NSLog(@"Can't remove persistent store file: %@, %@", error, [error userInfo]);
       return NO;
     }
@@ -185,8 +173,7 @@
                                                         configuration:nil
                                                                   URL:storeURL
                                                               options:nil
-                                                                error:&error])
-    {
+                                                                error:&error]) {
       NSLog(@"Can't add persistent store: %@, %@", error, [error userInfo]);
       return NO;
     }
@@ -202,17 +189,26 @@
  */
 - (void)mergeChangesFromContextDidSaveNotification:(NSNotification *)notification
 {
-  if (self.mainManagedObjectContext != [notification object])
-  {
+  if (self.mainManagedObjectContext != [notification object]) {
     [self.mainManagedObjectContext performSelectorOnMainThread:@selector(mergeChangesFromContextDidSaveNotification:)
                                                     withObject:notification
                                                  waitUntilDone:NO];
   }
 }
 
-- (NSURL *)applicationCachesDirectory
+- (NSURL *)storeURL
 {
-  return [[[NSFileManager defaultManager] URLsForDirectory:NSCachesDirectory inDomains:NSUserDomainMask] lastObject];
+  NSURL *storeURL = [self applicationSupportDirectory];
+  if (_folderName) {
+    storeURL = [[self applicationSupportDirectory] URLByAppendingPathComponent:_folderName isDirectory:YES];
+  }
+  return [storeURL URLByAppendingPathComponent:_databaseName];
 }
+
+- (NSURL *)applicationSupportDirectory
+{
+  return [[[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
+}
+
 
 @end

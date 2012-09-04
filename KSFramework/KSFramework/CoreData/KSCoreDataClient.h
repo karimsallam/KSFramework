@@ -13,15 +13,18 @@
 // To load the managedObjectModel from a bundle. If bundle is nil loads the managedObjectModel from the main bundle.
 - (id)initWithManagedObjectModelName:(NSString *)managedObjectModelName
                         databaseName:(NSString *)databaseName
-                              bundle:(NSString *)bundleNameOrNil;
+                              bundle:(NSString *)bundleNameOrNil
+                          folderName:(NSString *)folderNameOrNil;
 
 // To pass a managedObjectModel. The managedObjectModel is copied.
 - (id)initWithManagedObjectModel:(NSManagedObjectModel *)managedObjectModel
-                    databaseName:(NSString *)databaseName;
+                    databaseName:(NSString *)databaseName
+                      folderName:(NSString *)folderNameOrNil;
 
 @property (readonly, copy, nonatomic) NSString *managedObjectModelName;
 @property (readonly, copy, nonatomic) NSString *databaseName;
 @property (readonly, copy, nonatomic) NSString *bundleName;
+@property (readonly, copy, nonatomic) NSString *folderName;
 
 - (NSManagedObjectModel *)managedObjectModel;
 - (NSManagedObjectContext *)mainManagedObjectContext;
