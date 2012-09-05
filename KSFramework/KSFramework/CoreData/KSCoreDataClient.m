@@ -96,10 +96,13 @@
 - (NSPersistentStoreCoordinator *)persistentStoreCoordinator
 {
 	if (_persistentStoreCoordinator)  return _persistentStoreCoordinator;
+  
   if (!self.managedObjectModel)     return nil;
   if (!_databaseName)               return nil;
   
   NSURL *storeURL = [self storeURL];
+  if (!storeURL)                    return nil;
+
 	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
                            [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
                            [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
@@ -111,7 +114,7 @@
                                                            URL:storeURL
                                                        options:options
                                                          error:&error]) {
-    NSLog(@"Can't add/merge persistent store: %@, %@", error, [error userInfo]);
+    NSLog(@"Can't add/merge persistent store: %@", error);
     if (![[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error]) {
       NSLog(@"Can't remove previous persistent store file: %@, %@", error, [error userInfo]);
     }
@@ -200,8 +203,25 @@
 {
   NSURL *storeURL = [self applicationSupportDirectory];
   if (_folderName) {
-    storeURL = [[self applicationSupportDirectory] URLByAppendingPathComponent:_folderName isDirectory:YES];
+    storeURL = [storeURL URLByAppendingPathComponent:_folderName isDirectory:YES];
+    
+    BOOL isDir = NO;
+    if (![[NSFileManager defaultManager] fileExistsAtPath:[storeURL path] isDirectory:&isDir]) {
+      NSError *error = nil;
+      if (![[NSFileManager defaultManager] createDirectoryAtURL:storeURL
+                                    withIntermediateDirectories:YES
+                                                     attributes:@{ NSURLIsExcludedFromBackupKey : @(YES) }
+                                                          error:&error]) {
+        NSLog(@"Can't create database directory: %@", error);
+        return nil;
+      }
+    }
+    else if (!isDir) {
+      NSLog(@"Database directory name is already taken by a file");
+      return nil;
+    }
   }
+  
   return [storeURL URLByAppendingPathComponent:_databaseName];
 }
 
