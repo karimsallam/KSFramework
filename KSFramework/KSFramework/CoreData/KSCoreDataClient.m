@@ -130,7 +130,8 @@
 	return _persistentStoreCoordinator;
 }
 
-- (NSManagedObjectContext *)managedObjectContext {
+- (NSManagedObjectContext *)managedObjectContext
+{
 	NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] init];
 	[managedObjectContext setPersistentStoreCoordinator:self.persistentStoreCoordinator];
   
